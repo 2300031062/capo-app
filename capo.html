@@ -1,0 +1,177 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="UTF-8">
+  <title>Guitar Capo Helper</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+  <style>
+    body {
+      font-family: 'Segoe UI', sans-serif;
+      background: linear-gradient(Black, #1a1a1a, #333);
+      color: #fff;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: flex-start;
+      min-height: 100vh;
+      margin: 0;
+      padding: 20px;
+    }
+
+    h1 {
+      font-size: 2em;
+      margin-bottom: 20px;
+      text-shadow: 1px 1px 5px #00ff99;
+    }
+
+    input {
+      font-size: 20px;
+      padding: 15px;
+      width: 80%;
+      max-width: 300px;
+      border-radius: 10px;
+      border: none;
+      margin-bottom: 15px;
+      text-align: center;
+    }
+
+    button {
+      font-size: 20px;
+      padding: 15px 30px;
+      border: none;
+      border-radius: 10px;
+      background: #00c853;
+      color: black;
+      font-weight: bold;
+      cursor: pointer;
+      transition: 0.2s;
+    }
+
+    button:hover {
+      background: #00e676;
+    }
+
+    .result {
+      margin-top: 30px;
+      font-size: 22px;
+      text-align: center;
+      line-height: 1.6;
+      background: rgba(0,0,0,0.4);
+      padding: 20px;
+      border-radius: 15px;
+      max-width: 350px;
+      word-wrap: break-word;
+    }
+
+    footer {
+      margin-top: auto;
+      font-size: 12px;
+      color: #aaa;
+    }
+  </style>
+</head>
+
+<body>
+
+  <h1>🎸 Guitar Capo Helper</h1>
+
+  <input id="keyInput" placeholder="Enter scale (e.g., D, Em)" autofocus>
+
+  <button onclick="findCapo()">Find Capo</button>
+
+  <div class="result" id="result"></div>
+
+  <footer>
+    Personal tool • Works offline • Big buttons for stage
+  </footer>
+
+  <script>
+  const chromatic = ["C","C#","D","D#","E","F","F#","G","G#","A","A#","B"];
+
+  const majorProgressions = {
+    "C": "C  Am  F  G",
+    "G": "G  Em  C  D"
+  };
+
+  const minorProgressions = {
+    "A": "Am  F  C  G",
+    "E": "Em  G  C  D"
+  };
+
+  function capo(base, target) {
+    return (chromatic.indexOf(target) - chromatic.indexOf(base) + 12) % 12;
+  }
+
+  function findBestOption(progressions, targetKey) {
+    let best = null;
+
+    for (let base in progressions) {
+      let fret = capo(base, targetKey);
+
+      if (fret <= 7) {
+        // Always prefer open position
+        if (fret === 0) {
+          return { fret, chords: progressions[base] };
+        }
+        if (!best || fret < best.fret) {
+          best = { fret, chords: progressions[base] };
+        }
+      }
+    }
+    return best;
+  }
+
+  function findCapo() {
+    const input = document.getElementById("keyInput").value.trim().toUpperCase();
+    const result = document.getElementById("result");
+
+    if (!input) {
+      result.innerHTML = "⚠️ Enter a scale (C, D, Em, F#)";
+      return;
+    }
+
+    // Clean minor detection: only if it ENDS with M
+    const isMinor = input.endsWith("M");
+    const targetKey = isMinor ? input.slice(0, -1) : input;
+
+    if (!chromatic.includes(targetKey)) {
+      result.innerHTML = "⚠️ Invalid scale";
+      return;
+    }
+
+    let option;
+
+    if (isMinor) {
+      option = findBestOption(minorProgressions, targetKey);
+      if (option) {
+        result.innerHTML =
+          `Target: <b>${targetKey} minor</b><br>` +
+          `Capo: <b>${option.fret === 0 ? "Open position" : option.fret}</b><br>` +
+          `Play chords: <b>${option.chords}</b>`;
+        return;
+      }
+    } else {
+      option = findBestOption(majorProgressions, targetKey);
+      if (option) {
+        result.innerHTML =
+          `Target: <b>${targetKey} major</b><br>` +
+          `Capo: <b>${option.fret === 0 ? "Open position" : option.fret}</b><br>` +
+          `Play chords: <b>${option.chords}</b>`;
+        return;
+      }
+    }
+
+    result.innerHTML = "⚠️ No comfortable capo position found";
+  }
+
+  document.getElementById("keyInput").addEventListener("keydown", function(e) {
+    if (e.key === "Enter") {
+      findCapo();
+    }
+  });
+</script>
+
+
+</body>
+</html>
